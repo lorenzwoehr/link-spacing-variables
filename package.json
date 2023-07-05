@@ -18,14 +18,14 @@
     "editorType": [
       "figma"
     ],
-    "id": "link-spacing-variables",
-    "name": "Link spacing variables",
+    "id": "apply-spacing-variables",
+    "name": "Apply spacing variables",
     "menu": [
       {
-        "name": "Link spacing variables",
+        "name": "Apply spacing variables",
         "main": {
           "src": "src/main.ts",
-          "handler": "linkSpacings"
+          "handler": "applySpacingVariables"
         },
         "ui": "src/ui.tsx"
       },

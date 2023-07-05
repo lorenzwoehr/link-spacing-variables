@@ -11,10 +11,10 @@ export const localCollections = figma.variables.getLocalVariableCollections();
 export const dropdownOptions: Array<DropdownOption> = [];
 export const selectedNodes = figma.currentPage.selection; // currently selected nodes
 
-export function linkSpacings() {
+export function applySpacingVariables() {
   // clear console
   console.clear();
-  console.log("Command: Link spacing variables");
+  console.log("Command: Apply spacing variables");
 
   // close plugin if no nodes are selected
   if (selectedNodes.length === 0) {

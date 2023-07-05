@@ -11,10 +11,10 @@ export const localCollections = figma.variables.getLocalVariableCollections();
 export const dropdownOptions: Array<DropdownOption> = [];
 export const selectedNodes = figma.currentPage.selection; // currently selected nodes
 
-export function applySpacingVariables() {
+export function linkVariables() {
   // clear console
   console.clear();
-  console.log("Command: Apply spacing variables");
+  console.log("Command: Link spacing variables");
 
   // close plugin if no nodes are selected
   if (selectedNodes.length === 0) {
@@ -49,7 +49,7 @@ export function applySpacingVariables() {
   // if collection is selected, link variables
   if (collection !== "") {
     for (const node of selectedNodes) {
-      linkSpacingVariables(node, collection);
+      link(node, collection);
     }
     figma.closePlugin();
   }
@@ -104,7 +104,7 @@ export function settings() {
   );
 }
 
-function linkSpacingVariables(node: SceneNode, spacingCollectionID: string) {
+function link(node: SceneNode, spacingCollectionID: string) {
   const localVariables =
     figma.variables.getVariableCollectionById(spacingCollectionID);
   const localVariablesIDs = localVariables?.variableIds ?? [];
@@ -178,8 +178,7 @@ function linkSpacingVariables(node: SceneNode, spacingCollectionID: string) {
 
   if ("children" in node) {
     for (const childNode of node.children) {
-      if (childNode.type !== "INSTANCE")
-        linkSpacingVariables(childNode, spacingCollectionID);
+      if (childNode.type !== "INSTANCE") link(childNode, spacingCollectionID);
     }
   }
 
@@ -211,7 +210,7 @@ on<LinkSpacingsHandler>("LINK_SPACING", function () {
 
   // Loop through currently selected nodes
   for (const node of selectedNodes) {
-    linkSpacingVariables(node, collection);
+    link(node, collection);
   }
 
   console.log("Linked all selected layers to local variables.");

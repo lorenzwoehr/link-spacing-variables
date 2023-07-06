@@ -11,6 +11,8 @@ export const localCollections = figma.variables.getLocalVariableCollections();
 export const dropdownOptions: Array<DropdownOption> = [];
 export const selectedNodes = figma.currentPage.selection; // currently selected nodes
 
+let variablesSet = false; // flag to check if variables have been set
+
 export function linkVariables() {
   // clear console
   console.clear();
@@ -46,13 +48,19 @@ export function linkVariables() {
 
   const collection = getSavedCollection();
 
+  // reset flag
+  variablesSet = false;
+
   // if collection is selected, link variables
   if (collection !== "") {
     for (const node of selectedNodes) {
       link(node, collection);
     }
+
     figma.closePlugin();
   }
+
+  notifyUser(variablesSet);
 
   showUI(
     {
@@ -108,7 +116,6 @@ function link(node: SceneNode, spacingCollectionID: string) {
   const localVariables =
     figma.variables.getVariableCollectionById(spacingCollectionID);
   const localVariablesIDs = localVariables?.variableIds ?? [];
-  let variablesSet = false;
 
   console.log("Selected collection: " + spacingCollectionID);
   console.log("Selected node: " + node.name + " - " + node.type);
@@ -181,8 +188,6 @@ function link(node: SceneNode, spacingCollectionID: string) {
       if (childNode.type !== "INSTANCE") link(childNode, spacingCollectionID);
     }
   }
-
-  console.log("Variables set: " + variablesSet);
 }
 
 function getSavedCollection() {
@@ -193,6 +198,24 @@ function getSavedCollection() {
   );
 
   return valid ? savedCollection : "";
+}
+
+function notifyUser(variablesSet: boolean) {
+  if (variablesSet) {
+    console.log(
+      "Linked all selected layers to local variables: " + variablesSet
+    );
+    figma.notify("Linked all selected layers to local variables.", {
+      timeout: 2000,
+      error: false,
+    });
+  } else {
+    console.log("No variables linked in selected layers.");
+    figma.notify("No variables linked in selected layers.", {
+      timeout: 2000,
+      error: true,
+    });
+  }
 }
 
 // Save collection ID to plugin data
@@ -208,16 +231,15 @@ on<LinkSpacingsHandler>("LINK_SPACING", function () {
   const collection = getSavedCollection();
   console.log("Selected collection via getSavedCollection: " + collection);
 
+  // reset flag
+  variablesSet = false;
+
   // Loop through currently selected nodes
   for (const node of selectedNodes) {
     link(node, collection);
   }
 
-  console.log("Linked all selected layers to local variables.");
-  figma.notify("Linked all selected layers to local variables.", {
-    timeout: 2000,
-    error: false,
-  });
+  notifyUser(variablesSet);
 });
 
 once<ShowInterfaceHandler>("SHOW_UI", function () {

@@ -3,6 +3,9 @@
 
 Effortlessly link spacing variables to your design system, ensuring consistency and efficiency throughout the design process.
 
+[![button](https://github.com/lorenzwoehr/link-spacing-variables/assets/5892374/ea407f30-ca79-4aeb-8863-961599a0bae1)](https://www.figma.com/community/plugin/1258541120380373830)
+
+
  ![cover-art](https://github.com/lorenzwoehr/link-spacing-variables/assets/5892374/12421cd5-6b2c-48ed-b4bb-42b5fc8bee41)
 
 ## Getting Started

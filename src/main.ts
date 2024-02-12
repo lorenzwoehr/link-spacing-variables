@@ -227,12 +227,12 @@ async function link(node: SceneNode, spacingCollectionID: string) {
 
       // SCOPE: Link gap (auto layout)
       if (
-        ((variableScopes.includes("GAP") ||
+        (variableScopes.includes("GAP") ||
           variableScopes.includes("ALL_SCOPES")) &&
-          node.type === "FRAME") ||
-        node.type === "COMPONENT" ||
-        node.type === "COMPONENT_SET" ||
-        node.type === "INSTANCE"
+        (node.type === "FRAME" ||
+          node.type === "COMPONENT" ||
+          node.type === "COMPONENT_SET" ||
+          node.type === "INSTANCE")
       ) {
         const {
           itemSpacing,

@@ -213,36 +213,45 @@ async function link(node: SceneNode, spacingCollectionID: string) {
 
   console.log("Selected node: " + node.name + " - " + node.type);
 
-  if (
-    (node.type === "FRAME" ||
-      node.type === "COMPONENT" ||
-      node.type === "COMPONENT_SET" ||
-      node.type === "INSTANCE") &&
-    node.layoutMode !== "NONE"
-  ) {
-    const {
-      itemSpacing,
-      paddingTop,
-      paddingRight,
-      paddingBottom,
-      paddingLeft,
-    } = node.inferredAutoLayout ?? {};
+  for (const variableID of variableIDs) {
+    // Finally we can handle local and library variables equally
+    const variableNode = figma.variables.getVariableById(variableID);
 
-    const nodeVerticalSpacing = node.counterAxisSpacing;
+    // Check if the variable node exists and then use it with setBoundVariable
+    if (variableNode) {
+      const variable = await variableNode; // Make sure to await if getVariableById returns a Promise
+      const variableScopes = variableNode.scopes;
 
-    for (const variableID of variableIDs) {
-      // Finally we can handle local and library variables equally
-      const variableNode = figma.variables.getVariableById(variableID);
+      console.log(variable.scopes);
+      console.log(variable.valuesByMode[variableMode]);
 
-      // Check if the variable node exists and then use it with setBoundVariable
-      if (variableNode) {
-        const variable = await variableNode; // Make sure to await if getVariableById returns a Promise
+      // SCOPE: Link gap (auto layout)
+      if (
+        ((variableScopes.includes("GAP") ||
+          variableScopes.includes("ALL_SCOPES")) &&
+          node.type === "FRAME") ||
+        node.type === "COMPONENT" ||
+        node.type === "COMPONENT_SET" ||
+        node.type === "INSTANCE"
+      ) {
+        const {
+          itemSpacing,
+          paddingTop,
+          paddingRight,
+          paddingBottom,
+          paddingLeft,
+        } = node.inferredAutoLayout ?? {}; // node autolayout spacing
+
+        const nodeVerticalSpacing = node.counterAxisSpacing; // node vertical and horizontal gaps
 
         if (
           variable &&
           itemSpacing === variable.valuesByMode[variableMode] &&
           node.primaryAxisAlignItems !== "SPACE_BETWEEN"
         ) {
+          console.log(
+            "ITEM SPACING VAR: " + variable.valuesByMode[variableMode]
+          );
           node.setBoundVariable("itemSpacing", variable.id);
           variablesSet = true;
         }
@@ -278,13 +287,98 @@ async function link(node: SceneNode, spacingCollectionID: string) {
           variablesSet = true;
         }
       }
+
+      // SCOPE: Width and height
+      if (
+        variableScopes.includes("WIDTH_HEIGHT") ||
+        variableScopes.includes("ALL_SCOPES")
+      ) {
+        const nodeHeight = node.height; // node height
+        const nodeWidth = node.width; // node width
+
+        if (variable && nodeWidth === variable.valuesByMode[variableMode]) {
+          node.setBoundVariable("width", variable.id);
+          variablesSet = true;
+        }
+
+        if (variable && nodeHeight === variable.valuesByMode[variableMode]) {
+          node.setBoundVariable("height", variable.id);
+          variablesSet = true;
+        }
+      }
+
+      // SCOPE: Corner radius
+      if (
+        variableScopes.includes("CORNER_RADIUS") ||
+        variableScopes.includes("ALL_SCOPES")
+      ) {
+        // Check if node has single corner radius
+        if (node.cornerRadius !== figma.mixed) {
+          // Get single corner radius of node
+          const nodeCornerRadius = node.cornerRadius;
+
+          if (
+            variable &&
+            nodeCornerRadius === variable.valuesByMode[variableMode]
+          ) {
+            //node.setBoundVariable("mixedRadius", variable.id);
+            console.log("SET SINGLE CORNER RADIUS");
+            node.setBoundVariable("topLeftRadius", variable.id);
+            node.setBoundVariable("topRightRadius", variable.id);
+            node.setBoundVariable("bottomLeftRadius", variable.id);
+            node.setBoundVariable("bottomRightRadius", variable.id);
+            variablesSet = true;
+          }
+        } else {
+          // if node has mixed corner radius
+          // Get mixed corner radii of node
+          const nodeTopLeftRadius = node.topLeftRadius;
+          const nodeTopRightRadius = node.topRightRadius;
+          const nodeBottomLeftRadius = node.bottomLeftRadius;
+          const nodeBottomRightRadius = node.bottomRightRadius;
+
+          if (
+            variable &&
+            nodeTopLeftRadius === variable.valuesByMode[variableMode]
+          ) {
+            node.setBoundVariable("topLeftRadius", variable.id);
+            variablesSet = true;
+          }
+
+          if (
+            variable &&
+            nodeTopRightRadius === variable.valuesByMode[variableMode]
+          ) {
+            node.setBoundVariable("topRightRadius", variable.id);
+            variablesSet = true;
+          }
+
+          if (
+            variable &&
+            nodeBottomLeftRadius === variable.valuesByMode[variableMode]
+          ) {
+            node.setBoundVariable("bottomLeftRadius", variable.id);
+            variablesSet = true;
+          }
+
+          if (
+            variable &&
+            nodeBottomRightRadius === variable.valuesByMode[variableMode]
+          ) {
+            node.setBoundVariable("bottomRightRadius", variable.id);
+            variablesSet = true;
+          }
+        }
+      }
     }
   }
 
   if ("children" in node) {
     for (const childNode of node.children) {
-      if (childNode.type !== "INSTANCE")
+      if (childNode.type !== "INSTANCE") {
+        console.log("link child node");
         await link(childNode, spacingCollectionID);
+      }
     }
   }
 }

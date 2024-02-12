@@ -283,7 +283,8 @@ async function link(node: SceneNode, spacingCollectionID: string) {
 
   if ("children" in node) {
     for (const childNode of node.children) {
-      if (childNode.type !== "INSTANCE") link(childNode, spacingCollectionID);
+      if (childNode.type !== "INSTANCE")
+        await link(childNode, spacingCollectionID);
     }
   }
 }

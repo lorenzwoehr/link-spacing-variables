@@ -232,46 +232,51 @@ async function link(node: SceneNode, spacingCollectionID: string) {
 
     for (const variableID of variableIDs) {
       // Finally we can handle local and library variables equally
-      const variable = figma.variables.getVariableById(variableID);
+      const variableNode = figma.variables.getVariableById(variableID);
 
-      if (
-        variable &&
-        itemSpacing === variable.valuesByMode[variableMode] &&
-        node.primaryAxisAlignItems !== "SPACE_BETWEEN"
-      ) {
-        node.setBoundVariable("itemSpacing", variable.id);
-        variablesSet = true;
-      }
+      // Check if the variable node exists and then use it with setBoundVariable
+      if (variableNode) {
+        const variable = await variableNode; // Make sure to await if getVariableById returns a Promise
 
-      if (
-        variable &&
-        node.layoutWrap === "WRAP" &&
-        node.counterAxisAlignContent !== "SPACE_BETWEEN" &&
-        nodeVerticalSpacing === variable.valuesByMode[variableMode]
-      ) {
-        node.setBoundVariable("counterAxisSpacing", variable.id);
-        variablesSet = true;
-        console.log("counterAxisSpacing set");
-      }
+        if (
+          variable &&
+          itemSpacing === variable.valuesByMode[variableMode] &&
+          node.primaryAxisAlignItems !== "SPACE_BETWEEN"
+        ) {
+          node.setBoundVariable("itemSpacing", variable.id);
+          variablesSet = true;
+        }
 
-      if (paddingTop === variable!.valuesByMode[variableMode]) {
-        node.setBoundVariable("paddingTop", variable!.id);
-        variablesSet = true;
-      }
+        if (
+          variable &&
+          node.layoutWrap === "WRAP" &&
+          node.counterAxisAlignContent !== "SPACE_BETWEEN" &&
+          nodeVerticalSpacing === variable.valuesByMode[variableMode]
+        ) {
+          node.setBoundVariable("counterAxisSpacing", variable.id);
+          variablesSet = true;
+          console.log("counterAxisSpacing set");
+        }
 
-      if (paddingRight === variable!.valuesByMode[variableMode]) {
-        node.setBoundVariable("paddingRight", variable!.id);
-        variablesSet = true;
-      }
+        if (paddingTop === variable!.valuesByMode[variableMode]) {
+          node.setBoundVariable("paddingTop", variable!.id);
+          variablesSet = true;
+        }
 
-      if (paddingBottom === variable!.valuesByMode[variableMode]) {
-        node.setBoundVariable("paddingBottom", variable!.id);
-        variablesSet = true;
-      }
+        if (paddingRight === variable!.valuesByMode[variableMode]) {
+          node.setBoundVariable("paddingRight", variable!.id);
+          variablesSet = true;
+        }
 
-      if (paddingLeft === variable!.valuesByMode[variableMode]) {
-        node.setBoundVariable("paddingLeft", variable!.id);
-        variablesSet = true;
+        if (paddingBottom === variable!.valuesByMode[variableMode]) {
+          node.setBoundVariable("paddingBottom", variable!.id);
+          variablesSet = true;
+        }
+
+        if (paddingLeft === variable!.valuesByMode[variableMode]) {
+          node.setBoundVariable("paddingLeft", variable!.id);
+          variablesSet = true;
+        }
       }
     }
   }

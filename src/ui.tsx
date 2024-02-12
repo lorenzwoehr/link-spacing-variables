@@ -16,6 +16,7 @@ import {
   LinkSpacingsHandler,
   ShowInterfaceHandler,
 } from "./types";
+// import { parseDropdownValue, createDropdownValue } from "./main";
 
 function Plugin(props: {
   collections: DropdownOption[];
@@ -24,6 +25,8 @@ function Plugin(props: {
   const [value, setValue] = useState<null | string>(null);
   const collections = props.collections;
   const selectedCollection = props.selectedCollection;
+
+  // const { type, id } = parseDropdownValue(selectedCollection);
 
   // initialize dropdown
   useEffect(() => {
@@ -38,7 +41,15 @@ function Plugin(props: {
   // handle update dropdown if collections change
   function handleChange(event: JSX.TargetedEvent<HTMLInputElement>) {
     const newValue = event.currentTarget.value;
+
+    // set dropdown value to selected option
+    console.log("Selected value:", newValue);
     setValue(newValue);
+
+    // const { type, id } = JSON.parse(newValue);
+    // const collectionData = JSON.stringify({ type, id }).replace(/\s+/g, "");
+
+    console.log("Emitting SetCollection with data:", newValue);
     emit<SetCollectionHandler>("SET_COLLECTION", newValue);
   }
 

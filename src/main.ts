@@ -28,8 +28,6 @@ export async function linkVariables() {
     figma.closePlugin();
   }
 
-  // let variables: Array<any> = [];
-
   // Fetch both local and library collections asynchronously
   const localCollections = figma.variables.getLocalVariableCollections();
   const libraryCollections =
@@ -37,8 +35,6 @@ export async function linkVariables() {
 
   // Merge local and library collections
   const allCollections = [...localCollections, ...libraryCollections];
-
-  console.log(allCollections);
 
   // if collections exist, add them to the dropdown
   if (localCollections.length === 0) {
@@ -172,10 +168,7 @@ async function link(node: SceneNode, spacingCollectionID: string) {
   const { type, id } = parseDropdownValue(spacingCollectionID);
 
   let variableIDs: Array<any> = []; // Array to hold either local or library variable IDs
-  let variableMode: string = "";
-
-  console.log(node.resolvedVariableModes);
-  console.log(id);
+  let variableMode: string = ""; // String to hold the resolved variable mode of the selected node
 
   if (type == "local") {
     // Get local variables
@@ -208,7 +201,7 @@ async function link(node: SceneNode, spacingCollectionID: string) {
       }
     }
 
-    // Get variable mode of selected node for library collection. HACK : library collection IDs weirdly have a different format than local collections
+    // Get variable mode of selected node for library collection. FIGMA HACK: Library collection IDs weirdly have a different format than local collections, therefore we need to match the partial ID to the key
     for (const key of Object.keys(node.resolvedVariableModes)) {
       // Check if the key includes the partial ID
       if (key.includes(id)) {
@@ -216,11 +209,7 @@ async function link(node: SceneNode, spacingCollectionID: string) {
         variableMode = node.resolvedVariableModes[key];
       }
     }
-
-    console.log(variableMode);
   }
-
-  // const test = figma.variables.getVariableById(variableIDs[0]);
 
   console.log("Selected node: " + node.name + " - " + node.type);
 
@@ -242,13 +231,8 @@ async function link(node: SceneNode, spacingCollectionID: string) {
     const nodeVerticalSpacing = node.counterAxisSpacing;
 
     for (const variableID of variableIDs) {
+      // Finally we can handle local and library variables equally
       const variable = figma.variables.getVariableById(variableID);
-      console.log(variable);
-
-      /* Get variable mode of selected node
-      variableMode = node.resolvedVariableModes[id];
-
-      console.log("Variable mode: " + variableMode); */
 
       if (
         variable &&
@@ -299,6 +283,7 @@ async function link(node: SceneNode, spacingCollectionID: string) {
   }
 }
 
+// Fetch saved collection from plugin data, return empty string if it has not been set by the user yet
 function getSavedCollection() {
   const savedCollection = figma.root.getPluginData("collection");
 
@@ -310,6 +295,13 @@ function getSavedCollection() {
   return valid ? savedCollection : "";
 }
 
+// Save collection ID to plugin data
+on<SetCollectionHandler>("SET_COLLECTION", function (collection: string) {
+  console.log("Set collection to: " + collection);
+  figma.root.setPluginData("collection", collection);
+});
+
+// Prompt user
 function notifyUser(variablesSet: boolean) {
   if (variablesSet) {
     console.log(
@@ -327,12 +319,6 @@ function notifyUser(variablesSet: boolean) {
     });
   }
 }
-
-// Save collection ID to plugin data
-on<SetCollectionHandler>("SET_COLLECTION", function (collection: string) {
-  console.log("Set collection to: " + collection);
-  figma.root.setPluginData("collection", collection);
-});
 
 // Link spacings
 on<LinkSpacingsHandler>("LINK_SPACING", async function () {

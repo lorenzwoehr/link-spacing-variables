@@ -29,7 +29,7 @@ Now you can import the Bar Chart plugin from within the Figma desktop app (`Plug
 
 
 ## How it works
-**1. Create a collection:** Start by creating a collection that contains all your spacing variables (e.g. `xs`, `sm`, `md` etc.)
+**1. Create a collection:** Start by creating a collection that contains all your spacing variables (e.g. `xs`, `sm`, `md` etc.). Make sure you set the right scope for each variable if needed.
 
 **2. Select the layer(s):** Choose the layer(s) in your design that you want to link with the spacing variables. These layers can include groups, frames, or individual elements.
 

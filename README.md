@@ -5,7 +5,7 @@ Effortlessly link spacing variables to your design system, ensuring consistency 
 
 [![button](https://raw.githubusercontent.com/lorenzwoehr/link-spacing-variables/main/media/button.svg)](https://www.figma.com/community/plugin/1258541120380373830)
 
- ![cover-art](https://github.com/lorenzwoehr/link-spacing-variables/assets/5892374/12421cd5-6b2c-48ed-b4bb-42b5fc8bee41)
+ ![cover-art](https://github.com/lorenzwoehr/link-spacing-variables/blob/ee7d6bcf0434ad8ef5f546bb429c02cbd2aec785/media/cover-art.png)
 
 ## Getting Started
 Before installing, you'll need to compile the code using the TypeScript compiler. To install TypeScript, first [install Node.js](https://nodejs.org/en/download/). Then:

@@ -20,7 +20,6 @@ export async function linkVariables() {
 
   // close plugin if no nodes are selected
   if (selectedNodes.length === 0) {
-    console.log("No nodes selected.");
     figma.notify("Please select at least one node.", {
       timeout: 2000,
       error: true,
@@ -37,8 +36,7 @@ export async function linkVariables() {
   const allCollections = [...localCollections, ...libraryCollections];
 
   // if collections exist, add them to the dropdown
-  if (localCollections.length === 0) {
-    console.log("No local collections found.");
+  if (allCollections.length === 0) {
     figma.notify("Please create a variable collection first.", {
       timeout: 2000,
       error: true,
@@ -71,7 +69,6 @@ export async function linkVariables() {
 
   // if collection is selected, link variables
   if (collection !== "") {
-    console.log("LINK VARIABLES");
     for (const node of selectedNodes) {
       await link(node, collection);
     }
@@ -109,7 +106,6 @@ export async function settings() {
 
   // if collections exist, add them to the dropdown
   if (allCollections.length === 0) {
-    console.log("No collections found.");
     figma.notify("Please create or add a variable collection first.", {
       timeout: 2000,
       error: true,
@@ -175,8 +171,10 @@ async function link(node: SceneNode, spacingCollectionID: string) {
     const localVariables = figma.variables.getVariableCollectionById(id);
     variableIDs = localVariables?.variableIds ?? [];
 
-    // Get variable mode of selected node for local collections
-    variableMode = node.resolvedVariableModes[id];
+    // Get variable mode of selected node for local collections. Use default collectin if variable has no selected mode
+    if (node.resolvedVariableModes.length)
+      variableMode = node.resolvedVariableModes[id];
+    else if (localVariables) variableMode = localVariables.defaultModeId;
   }
 
   if (type == "library") {
@@ -211,8 +209,6 @@ async function link(node: SceneNode, spacingCollectionID: string) {
     }
   }
 
-  console.log("Selected node: " + node.name + " - " + node.type);
-
   for (const variableID of variableIDs) {
     // Finally we can handle local and library variables equally
     const variableNode = figma.variables.getVariableById(variableID);
@@ -222,8 +218,16 @@ async function link(node: SceneNode, spacingCollectionID: string) {
       const variable = await variableNode; // Make sure to await if getVariableById returns a Promise
       const variableScopes = variableNode.scopes;
 
-      console.log(variable.scopes);
-      console.log(variable.valuesByMode[variableMode]);
+      // Fallback: If variableMode is undefined set variableMode to the first mode in the variable.valuesByMode array
+      // We don't use variableMode = localVariables.defaultModeId because library collection don't have a default mode
+      if (!variableMode) {
+        const availableModes = Object.keys(variable.valuesByMode);
+        if (availableModes.length > 0) {
+          variableMode = availableModes[0]; // Use the first available mode as the fallback
+        } else {
+          continue; // Skip this variable if no modes are available
+        }
+      }
 
       // SCOPE: Link gap (auto layout)
       if (
@@ -376,11 +380,12 @@ async function link(node: SceneNode, spacingCollectionID: string) {
   if ("children" in node) {
     for (const childNode of node.children) {
       if (childNode.type !== "INSTANCE") {
-        console.log("link child node");
         await link(childNode, spacingCollectionID);
       }
     }
   }
+
+  figma.closePlugin();
 }
 
 // Fetch saved collection from plugin data, return empty string if it has not been set by the user yet
@@ -404,15 +409,11 @@ on<SetCollectionHandler>("SET_COLLECTION", function (collection: string) {
 // Prompt user
 function notifyUser(variablesSet: boolean) {
   if (variablesSet) {
-    console.log(
-      "Linked all selected layers to local variables: " + variablesSet
-    );
     figma.notify("Linked all selected layers to local variables.", {
       timeout: 2000,
       error: false,
     });
   } else {
-    console.log("No variables linked in selected layers.");
     figma.notify("No variables linked in selected layers.", {
       timeout: 2000,
       error: true,

@@ -1,0 +1,22 @@
+{
+  "api": "1.0.0",
+  "editorType": ["figma"],
+  "id": "1258541120380373830",
+  "name": "Link spacing variables",
+  "main": "build/main.js",
+  "ui": "build/ui.js",
+  "permissions": ["teamlibrary"],
+  "menu": [
+    {
+      "name": "Link variables",
+      "command": "src/main.ts--linkVariables"
+    },
+    {
+      "separator": true
+    },
+    {
+      "name": "Settings",
+      "command": "src/main.ts--settings"
+    }
+  ]
+}

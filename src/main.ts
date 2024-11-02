@@ -7,7 +7,8 @@ import {
 } from "./types";
 
 export const nodes: Array<SceneNode> = [];
-export const localCollections = figma.variables.getLocalVariableCollections();
+/* export const localCollections =
+  await figma.variables.getLocalVariableCollectionsAsync(); */
 export const dropdownOptions: Array<DropdownOption> = [];
 export const selectedNodes = figma.currentPage.selection; // currently selected nodes
 
@@ -28,7 +29,8 @@ export async function linkVariables() {
   }
 
   // Fetch both local and library collections asynchronously
-  const localCollections = figma.variables.getLocalVariableCollections();
+  const localCollections =
+    await figma.variables.getLocalVariableCollectionsAsync();
   const libraryCollections =
     await figma.teamLibrary.getAvailableLibraryVariableCollectionsAsync();
 
@@ -97,7 +99,8 @@ export async function settings() {
   console.log("Command: Settings");
 
   // Fetch both local and library collections asynchronously
-  const localCollections = figma.variables.getLocalVariableCollections();
+  const localCollections =
+    await figma.variables.getLocalVariableCollectionsAsync();
   const libraryCollections =
     await figma.teamLibrary.getAvailableLibraryVariableCollectionsAsync();
 
@@ -168,7 +171,9 @@ async function link(node: SceneNode, spacingCollectionID: string) {
 
   if (type == "local") {
     // Get local variables
-    const localVariables = figma.variables.getVariableCollectionById(id);
+    const localVariables = await figma.variables.getVariableCollectionByIdAsync(
+      id
+    );
     variableIDs = localVariables?.variableIds ?? [];
 
     // Get variable mode of selected node for local collections. Use default collectin if variable has no selected mode
@@ -211,7 +216,7 @@ async function link(node: SceneNode, spacingCollectionID: string) {
 
   for (const variableID of variableIDs) {
     // Finally we can handle local and library variables equally
-    const variableNode = figma.variables.getVariableById(variableID);
+    const variableNode = await figma.variables.getVariableByIdAsync(variableID);
 
     // Check if the variable node exists and then use it with setBoundVariable
     if (variableNode) {
@@ -256,7 +261,7 @@ async function link(node: SceneNode, spacingCollectionID: string) {
           console.log(
             "ITEM SPACING VAR: " + variable.valuesByMode[variableMode]
           );
-          node.setBoundVariable("itemSpacing", variable.id);
+          node.setBoundVariable("itemSpacing", variable);
           variablesSet = true;
         }
 
@@ -266,28 +271,28 @@ async function link(node: SceneNode, spacingCollectionID: string) {
           node.counterAxisAlignContent !== "SPACE_BETWEEN" &&
           nodeVerticalSpacing === variable.valuesByMode[variableMode]
         ) {
-          node.setBoundVariable("counterAxisSpacing", variable.id);
+          node.setBoundVariable("counterAxisSpacing", variable);
           variablesSet = true;
           console.log("counterAxisSpacing set");
         }
 
         if (paddingTop === variable!.valuesByMode[variableMode]) {
-          node.setBoundVariable("paddingTop", variable!.id);
+          node.setBoundVariable("paddingTop", variable!);
           variablesSet = true;
         }
 
         if (paddingRight === variable!.valuesByMode[variableMode]) {
-          node.setBoundVariable("paddingRight", variable!.id);
+          node.setBoundVariable("paddingRight", variable!);
           variablesSet = true;
         }
 
         if (paddingBottom === variable!.valuesByMode[variableMode]) {
-          node.setBoundVariable("paddingBottom", variable!.id);
+          node.setBoundVariable("paddingBottom", variable!);
           variablesSet = true;
         }
 
         if (paddingLeft === variable!.valuesByMode[variableMode]) {
-          node.setBoundVariable("paddingLeft", variable!.id);
+          node.setBoundVariable("paddingLeft", variable!);
           variablesSet = true;
         }
       }
@@ -301,12 +306,12 @@ async function link(node: SceneNode, spacingCollectionID: string) {
         const nodeWidth = node.width; // node width
 
         if (variable && nodeWidth === variable.valuesByMode[variableMode]) {
-          node.setBoundVariable("width", variable.id);
+          node.setBoundVariable("width", variable);
           variablesSet = true;
         }
 
         if (variable && nodeHeight === variable.valuesByMode[variableMode]) {
-          node.setBoundVariable("height", variable.id);
+          node.setBoundVariable("height", variable);
           variablesSet = true;
         }
       }
@@ -327,10 +332,10 @@ async function link(node: SceneNode, spacingCollectionID: string) {
           ) {
             //node.setBoundVariable("mixedRadius", variable.id);
             console.log("SET SINGLE CORNER RADIUS");
-            node.setBoundVariable("topLeftRadius", variable.id);
-            node.setBoundVariable("topRightRadius", variable.id);
-            node.setBoundVariable("bottomLeftRadius", variable.id);
-            node.setBoundVariable("bottomRightRadius", variable.id);
+            node.setBoundVariable("topLeftRadius", variable);
+            node.setBoundVariable("topRightRadius", variable);
+            node.setBoundVariable("bottomLeftRadius", variable);
+            node.setBoundVariable("bottomRightRadius", variable);
             variablesSet = true;
           }
         } else {
@@ -345,7 +350,7 @@ async function link(node: SceneNode, spacingCollectionID: string) {
             variable &&
             nodeTopLeftRadius === variable.valuesByMode[variableMode]
           ) {
-            node.setBoundVariable("topLeftRadius", variable.id);
+            node.setBoundVariable("topLeftRadius", variable);
             variablesSet = true;
           }
 
@@ -353,7 +358,7 @@ async function link(node: SceneNode, spacingCollectionID: string) {
             variable &&
             nodeTopRightRadius === variable.valuesByMode[variableMode]
           ) {
-            node.setBoundVariable("topRightRadius", variable.id);
+            node.setBoundVariable("topRightRadius", variable);
             variablesSet = true;
           }
 
@@ -361,7 +366,7 @@ async function link(node: SceneNode, spacingCollectionID: string) {
             variable &&
             nodeBottomLeftRadius === variable.valuesByMode[variableMode]
           ) {
-            node.setBoundVariable("bottomLeftRadius", variable.id);
+            node.setBoundVariable("bottomLeftRadius", variable);
             variablesSet = true;
           }
 
@@ -369,7 +374,7 @@ async function link(node: SceneNode, spacingCollectionID: string) {
             variable &&
             nodeBottomRightRadius === variable.valuesByMode[variableMode]
           ) {
-            node.setBoundVariable("bottomRightRadius", variable.id);
+            node.setBoundVariable("bottomRightRadius", variable);
             variablesSet = true;
           }
         }

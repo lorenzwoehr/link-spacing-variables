@@ -4,6 +4,7 @@ import {
   SetCollectionHandler,
   LinkSpacingsHandler,
   ShowInterfaceHandler,
+  VariableBindableNodePropertyType,
 } from "./types";
 
 export const nodes: Array<SceneNode> = [];
@@ -164,224 +165,82 @@ function parseDropdownValue(value: string) {
 
 // function: link selected node and child nodes to variables in collection
 async function link(node: SceneNode, spacingCollectionID: string) {
-  const { type, id } = parseDropdownValue(spacingCollectionID);
+  // Parse the collection ID if necessary
+  const { id } = parseDropdownValue(spacingCollectionID);
 
-  let variableIDs: Array<any> = []; // Array to hold either local or library variable IDs
-  let variableMode: string = ""; // String to hold the resolved variable mode of the selected node
+  // Properties we're interested in
+  const properties: Array<VariableBindableNodePropertyType> = [
+    "itemSpacing",
+    "counterAxisSpacing",
+    "paddingTop",
+    "paddingRight",
+    "paddingBottom",
+    "paddingLeft",
+    "width",
+    "height",
+    "topLeftRadius",
+    "topRightRadius",
+    "bottomLeftRadius",
+    "bottomRightRadius",
+  ];
 
-  if (type == "local") {
-    // Get local variables
-    const localVariables = await figma.variables.getVariableCollectionByIdAsync(
-      id
-    );
-    variableIDs = localVariables?.variableIds ?? [];
+  // Check if node has inferredVariables
+  if ("inferredVariables" in node && node.inferredVariables) {
+    for (const property of properties) {
+      const variableAliases = node.inferredVariables[property];
 
-    // Get variable mode of selected node for local collections. Use default collectin if variable has no selected mode
-    if (node.resolvedVariableModes.length)
-      variableMode = node.resolvedVariableModes[id];
-    else if (localVariables) variableMode = localVariables.defaultModeId;
-  }
+      if (variableAliases && variableAliases.length > 0) {
+        for (const variableAlias of variableAliases) {
+          const variableId = variableAlias.id;
 
-  if (type == "library") {
-    // Get library variables
-    const libraryVariables =
-      await figma.teamLibrary.getVariablesInLibraryCollectionAsync(id);
-
-    // Import variables from the library collection
-    for (const libVar of libraryVariables) {
-      try {
-        // Import each variable by its key
-        const importedVariable = await figma.variables.importVariableByKeyAsync(
-          libVar.key
-        );
-
-        // Add the imported variable's ID to the array
-        if (importedVariable) {
-          variableIDs.push(importedVariable.id);
-        }
-      } catch (error) {
-        console.error("Error importing variable:", libVar.key, error);
-      }
-    }
-
-    // Get variable mode of selected node for library collection. FIGMA HACK: Library collection IDs weirdly have a different format than local collections, therefore we need to match the partial ID to the key
-    for (const key of Object.keys(node.resolvedVariableModes)) {
-      // Check if the key includes the partial ID
-      if (key.includes(id)) {
-        // Return the value (variable mode) associated with the key
-        variableMode = node.resolvedVariableModes[key];
-      }
-    }
-  }
-
-  for (const variableID of variableIDs) {
-    // Finally we can handle local and library variables equally
-    const variableNode = await figma.variables.getVariableByIdAsync(variableID);
-
-    // Check if the variable node exists and then use it with setBoundVariable
-    if (variableNode) {
-      const variable = await variableNode; // Make sure to await if getVariableById returns a Promise
-      const variableScopes = variableNode.scopes;
-
-      // Fallback: If variableMode is undefined set variableMode to the first mode in the variable.valuesByMode array
-      // We don't use variableMode = localVariables.defaultModeId because library collection don't have a default mode
-      if (!variableMode) {
-        const availableModes = Object.keys(variable.valuesByMode);
-        if (availableModes.length > 0) {
-          variableMode = availableModes[0]; // Use the first available mode as the fallback
-        } else {
-          continue; // Skip this variable if no modes are available
-        }
-      }
-
-      // SCOPE: Link gap (auto layout)
-      if (
-        (variableScopes.includes("GAP") ||
-          variableScopes.includes("ALL_SCOPES")) &&
-        (node.type === "FRAME" ||
-          node.type === "COMPONENT" ||
-          node.type === "COMPONENT_SET" ||
-          node.type === "INSTANCE")
-      ) {
-        const {
-          itemSpacing,
-          paddingTop,
-          paddingRight,
-          paddingBottom,
-          paddingLeft,
-        } = node.inferredAutoLayout ?? {}; // node autolayout spacing
-
-        const nodeVerticalSpacing = node.counterAxisSpacing; // node vertical and horizontal gaps
-
-        if (
-          variable &&
-          itemSpacing === variable.valuesByMode[variableMode] &&
-          node.primaryAxisAlignItems !== "SPACE_BETWEEN"
-        ) {
-          console.log(
-            "ITEM SPACING VAR: " + variable.valuesByMode[variableMode]
+          // Fetch the variable by ID
+          const variable = await figma.variables.getVariableByIdAsync(
+            variableId
           );
-          node.setBoundVariable("itemSpacing", variable);
-          variablesSet = true;
-        }
 
-        if (
-          variable &&
-          node.layoutWrap === "WRAP" &&
-          node.counterAxisAlignContent !== "SPACE_BETWEEN" &&
-          nodeVerticalSpacing === variable.valuesByMode[variableMode]
-        ) {
-          node.setBoundVariable("counterAxisSpacing", variable);
-          variablesSet = true;
-          console.log("counterAxisSpacing set");
-        }
+          if (variable) {
+            // Check if the variable belongs to the selected collection
+            // STRANGE FIGMA BEHAVIOUR: Library collection IDs weirdly have a different format than local collections, therefore we just check it the selected collection ID is included in variableCollectionId instead of equals
+            if (variable.variableCollectionId.includes(id)) {
+              const nodePropertyValue = node[property as keyof typeof node];
 
-        if (paddingTop === variable!.valuesByMode[variableMode]) {
-          node.setBoundVariable("paddingTop", variable!);
-          variablesSet = true;
-        }
+              // Ensure nodePropertyValue is not undefined and is of a valid type
+              if (
+                nodePropertyValue !== undefined &&
+                (typeof nodePropertyValue === "string" ||
+                  typeof nodePropertyValue === "number" ||
+                  typeof nodePropertyValue === "boolean")
+              ) {
+                // Now nodePropertyValue is of type VariableValue
+                const variableValues = Object.values(variable.valuesByMode);
 
-        if (paddingRight === variable!.valuesByMode[variableMode]) {
-          node.setBoundVariable("paddingRight", variable!);
-          variablesSet = true;
-        }
-
-        if (paddingBottom === variable!.valuesByMode[variableMode]) {
-          node.setBoundVariable("paddingBottom", variable!);
-          variablesSet = true;
-        }
-
-        if (paddingLeft === variable!.valuesByMode[variableMode]) {
-          node.setBoundVariable("paddingLeft", variable!);
-          variablesSet = true;
-        }
-      }
-
-      // SCOPE: Width and height
-      if (
-        variableScopes.includes("WIDTH_HEIGHT") ||
-        variableScopes.includes("ALL_SCOPES")
-      ) {
-        const nodeHeight = node.height; // node height
-        const nodeWidth = node.width; // node width
-
-        if (variable && nodeWidth === variable.valuesByMode[variableMode]) {
-          node.setBoundVariable("width", variable);
-          variablesSet = true;
-        }
-
-        if (variable && nodeHeight === variable.valuesByMode[variableMode]) {
-          node.setBoundVariable("height", variable);
-          variablesSet = true;
-        }
-      }
-
-      // SCOPE: Corner radius
-      if (
-        variableScopes.includes("CORNER_RADIUS") ||
-        variableScopes.includes("ALL_SCOPES")
-      ) {
-        // Check if node has single corner radius
-        if (node.cornerRadius !== figma.mixed) {
-          // Get single corner radius of node
-          const nodeCornerRadius = node.cornerRadius;
-
-          if (
-            variable &&
-            nodeCornerRadius === variable.valuesByMode[variableMode]
-          ) {
-            //node.setBoundVariable("mixedRadius", variable.id);
-            console.log("SET SINGLE CORNER RADIUS");
-            node.setBoundVariable("topLeftRadius", variable);
-            node.setBoundVariable("topRightRadius", variable);
-            node.setBoundVariable("bottomLeftRadius", variable);
-            node.setBoundVariable("bottomRightRadius", variable);
-            variablesSet = true;
-          }
-        } else {
-          // if node has mixed corner radius
-          // Get mixed corner radii of node
-          const nodeTopLeftRadius = node.topLeftRadius;
-          const nodeTopRightRadius = node.topRightRadius;
-          const nodeBottomLeftRadius = node.bottomLeftRadius;
-          const nodeBottomRightRadius = node.bottomRightRadius;
-
-          if (
-            variable &&
-            nodeTopLeftRadius === variable.valuesByMode[variableMode]
-          ) {
-            node.setBoundVariable("topLeftRadius", variable);
-            variablesSet = true;
-          }
-
-          if (
-            variable &&
-            nodeTopRightRadius === variable.valuesByMode[variableMode]
-          ) {
-            node.setBoundVariable("topRightRadius", variable);
-            variablesSet = true;
-          }
-
-          if (
-            variable &&
-            nodeBottomLeftRadius === variable.valuesByMode[variableMode]
-          ) {
-            node.setBoundVariable("bottomLeftRadius", variable);
-            variablesSet = true;
-          }
-
-          if (
-            variable &&
-            nodeBottomRightRadius === variable.valuesByMode[variableMode]
-          ) {
-            node.setBoundVariable("bottomRightRadius", variable);
-            variablesSet = true;
+                if (variableValues.includes(nodePropertyValue)) {
+                  // Bind the variable to the node's property
+                  node.setBoundVariable(
+                    property as VariableBindableNodePropertyType,
+                    variable
+                  );
+                  variablesSet = true;
+                  console.log(
+                    `Set variable ${variable.name} to property ${property}`
+                  );
+                  // Break if you only want to set one variable per property
+                  break;
+                }
+              } else {
+                // Handle cases where nodePropertyValue is undefined or not a valid type
+                console.warn(
+                  `Property ${property} is undefined or not a valid type on node ${node.name}`
+                );
+              }
+            }
           }
         }
       }
     }
   }
 
+  // Recursively process child nodes
   if ("children" in node) {
     for (const childNode of node.children) {
       if (childNode.type !== "INSTANCE") {
@@ -389,8 +248,6 @@ async function link(node: SceneNode, spacingCollectionID: string) {
       }
     }
   }
-
-  figma.closePlugin();
 }
 
 // Fetch saved collection from plugin data, return empty string if it has not been set by the user yet

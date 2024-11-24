@@ -25,7 +25,7 @@ Compile the Link Spacing Variables plugin:
 $ npm run build
 ```
 
-Now you can import the Bar Chart plugin from within the Figma desktop app (`Plugins > Development > Import plugin from manifest...` from the right-click menu)!
+Now you can import the plugin from within the Figma desktop app (`Plugins > Development > Import plugin from manifest...` from the right-click menu)!
 
 
 ## How it works
